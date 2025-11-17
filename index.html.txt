@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipment Tracking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", "Arial", sans-serif; /* 更现代的字体 */
+        }
+        body {
+            background-color: #f5f7fa;
+            padding: 40px 0;
+            line-height: 1.5;
+        }
+        .tracking-container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        /* 头部标题 - 简洁大气 */
+        .tracking-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .tracking-header h1 {
+            color: #1e293b;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        .tracking-header p {
+            color: #64748b;
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        /* 物流概览卡片 - 悬浮阴影增强 */
+        .tracking-summary {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 35px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            align-items: center;
+            transition: box-shadow 0.3s ease;
+        }
+        .tracking-summary:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        .summary-item {
+            flex: 1;
+            min-width: 160px;
+        }
+        .summary-item label {
+            display: block;
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .summary-item value {
+            display: block;
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .summary-status {
+            flex: 1;
+            min-width: 200px;
+            text-align: right;
+        }
+        .status-badge {
+            display: inline-block;
+            background-color: #e0f2fe;
+            color: #0284c7; /* 更沉稳的蓝色 */
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        /* 进度条 - 调整为50%（仅到离港） */
+        .tracking-progress {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 35px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: box-shadow 0.3s ease;
+        }
+        .tracking-progress:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        .progress-title {
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            height: 6px; /* 更细的进度条 */
+            background-color: #f1f5f9;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #0284c7;
+            width: 50%; /* 进度调整为50%（仅完成：揽收→入库→离港） */
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #94a3b8;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .progress-step.active {
+            color: #0284c7;
+            font-weight: 600;
+        }
+        .progress-step.inactive {
+            color: #cbd5e1;
+        }
+        /* 轨迹列表 - 优化时间线样式 */
+        .tracking-timeline {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .timeline-title {
+            color: #1e293b;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .timeline-item {
+            display: flex;
+            margin-bottom: 35px;
+            position: relative;
+            padding-left: 24px;
+        }
+        .timeline-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            position: absolute;
+            left: 0;
+            top: 4px;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        .timeline-item.active .timeline-dot {
+            background: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+            transform: scale(1.2);
+        }
+        .timeline-item::before {
+            content: '';
+            width: 1px;
+            height: 100%;
+            background: #f1f5f9;
+            position: absolute;
+            left: 6px;
+            top: 18px;
+            z-index: 1;
+        }
+        .timeline-item:last-child::before {
+            display: none;
+        }
+        .timeline-time {
+            width: 130px;
+            color: #64748b;
+            font-size: 14px;
+            padding-top: 2px;
+            font-weight: 500;
+        }
+        .timeline-content {
+            flex: 1;
+            background-color: #f8fafc;
+            padding: 18px;
+            border-radius: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .timeline-item:hover .timeline-content {
+            background-color: #f0f9ff; /* 悬浮浅蓝色背景 */
+        }
+        .timeline-content .status {
+            color: #1e293b;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .timeline-content .location {
+            color: #475569;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+        .timeline-content .description {
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        /* 响应式适配 - 优化移动端体验 */
+        @media (max-width: 768px) {
+            .tracking-summary {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .summary-status {
+                text-align: left;
+                width: 100%;
+                margin-top: 10px;
+            }
+            .timeline-time {
+                width: 110px;
+            }
+            .progress-step {
+                font-size: 12px;
+            }
+        }
+        @media (max-width: 480px) {
+            .timeline-item {
+                flex-direction: column;
+                padding-left: 20px;
+            }
+            .timeline-time {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            .tracking-header h1 {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="tracking-container">
+        <!-- 头部标题 -->
+        <div class="tracking-header">
+            <h1>Shipment Tracking</h1>
+            <p>Real-time updates for your international delivery to Serbia</p>
+        </div>
+
+        <!-- 物流概览卡片 -->
+        <div class="tracking-summary">
+            <div class="summary-item">
+                <label>Tracking Number</label>
+                <value>939557540</value>
+            </div>
+            <div class="summary-item">
+                <label>Shipped Date</label>
+                <value>Nov 10, 2025</value>
+            </div>
+            <div class="summary-item">
+                <label>Destination</label>
+                <value>Serbia</value>
+            </div>
+            <div class="summary-status">
+                <span class="status-badge">Departed Port</span>
+            </div>
+        </div>
+
+        <!-- 运输进度条（仅到离港） -->
+        <div class="tracking-progress">
+            <div class="progress-title">Delivery Progress</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-steps">
+                <span class="progress-step active">Collected</span>
+                <span class="progress-step active">Warehoused</span>
+                <span class="progress-step active">Departed Port</span>
+                <span class="progress-step inactive">In Customs</span>
+                <span class="progress-step inactive">Out for Delivery</span>
+                <span class="progress-step inactive">Delivered</span>
+            </div>
+        </div>
+
+        <!-- 物流轨迹列表 -->
+        <div class="tracking-timeline">
+            <div class="timeline-title">Tracking History</div>
+
+            <!-- 最新节点（离港） -->
+            <div class="timeline-item active">
+                <div class="timeline-dot"></div>
+                <div class="timeline-time">2025-11-17<br>10:30 AM</div>
+                <div class="timeline-content">
+                    <div class="status">Departed Port</div>
+                    <div class="location">Location: CN (Mainland China)</div>
+                    <div class="description">The shipment has left the starting port and is en route to Serbia. Next stop: International transit hub.</div>
+                </div>
+            </div>
+
+            <!-- 入库节点 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-time">2025-11-10<br>08:00 AM</div>
+                <div class="timeline-content">
+                    <div class="status">Warehoused</div>
+                    <div class="location">Location: CN-Shanghai (Shanghai Warehouse)</div>
+                    <div class="description">The shipment has been received and stored in the regional warehouse, preparing for international shipment to Serbia.</div>
+                </div>
+            </div>
+
+            <!-- 揽收节点 -->
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-time">2025-11-10<br>06:00 PM</div>
+                <div class="timeline-content">
+                    <div class="status">Collected</div>
+                    <div class="location">Location: CN-Shanghai (Shanghai Collection Point)</div>
+                    <div class="description">The shipment has been collected by the courier and is being processed for international delivery to Serbia.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
